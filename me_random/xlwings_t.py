@@ -210,6 +210,50 @@ def batch_excel_operations(data_dict, filename='batch_output.xlsx'):
     wb.save()
     print(f"Batch operation completed: {filename}")
     return wb
+    
+    
+def write_to_excel_with_merged_cells(df, filename='table_issues_expanded.xlsx'):
+    # First create the expanded dataframe normally
+    expanded_df = expand_table_issues(df)  # Your original function
+    
+    wb = xw.Book()
+    ws = wb.sheets[0]
+    
+    # Write headers
+    headers = ['Table Name', 'Issue', 'Variable']
+    ws.range('A1:C1').value = headers
+    ws.range('A1:C1').font.bold = True
+    
+    # Write data
+    current_row = 2
+    current_table = None
+    merge_start = 2
+    
+    for _, row in expanded_df.iterrows():
+        ws.range(f'A{current_row}').value = row['table_name']
+        ws.range(f'B{current_row}').value = row['issue']
+        ws.range(f'C{current_row}').value = row['variable']
+        
+        # Check if we need to merge cells for table name
+        if current_table != row['table_name']:
+            if current_table is not None and current_row > merge_start:
+                # Merge previous table's cells
+                ws.range(f'A{merge_start}:A{current_row-1}').merge()
+            current_table = row['table_name']
+            merge_start = current_row
+        
+        current_row += 1
+    
+    # Merge the last table's cells
+    if current_row > merge_start:
+        ws.range(f'A{merge_start}:A{current_row-1}').merge()
+    
+    # Format
+    ws.autofit()
+    ws.range('A:A').api.VerticalAlignment = -4108  # xlCenter
+    
+    wb.save(filename)
+    return wb
 
 # Example usage
 if __name__ == "__main__":
